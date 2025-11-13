@@ -1,0 +1,76 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             Int                  @id @default(autoincrement())
+  name           String
+  email          String               @unique
+  password       String
+  role           String               @default("jobseeker")
+  phone          String?
+  location       String?
+  profilePic     String?
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  experience     String?              @default("fresher")
+  careerBreak    String?
+  disability     String?
+  militaryExp    String?
+  profileSummary String?
+  resumeHeadline String?
+  ITSkills       ITSkills[]
+  KeySkills      KeySkills?
+  Personal       UserPersonalDetails?
+}
+
+model UserPersonalDetails {
+  id                  Int                   @id @default(autoincrement())
+  userId              Int                   @unique
+  gender              String?
+  moreInfo            String[]
+  maritalStatus       String?
+  dateofBirth         DateTime?
+  category            String?
+  permanentAddress    String?
+  hometown            String?
+  pincode             String?
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  languageProficiency LanguageProficiency[]
+  user                User                  @relation(fields: [userId], references: [id])
+}
+
+model LanguageProficiency {
+  id           Int                 @id @default(autoincrement())
+  userDetailId Int
+  language     String
+  proficiency  String
+  canRead      Boolean             @default(false)
+  canWrite     Boolean             @default(false)
+  canSpeak     Boolean             @default(false)
+  userDetails  UserPersonalDetails @relation(fields: [userDetailId], references: [id])
+}
+
+model KeySkills {
+  id          Int      @id @default(autoincrement())
+  userKeyId   Int      @unique
+  skillSet    String[]
+  userDetails User     @relation(fields: [userKeyId], references: [id])
+}
+
+model ITSkills {
+  id        Int    @id @default(autoincrement())
+  userKeyId Int
+  skill     String
+  version   String
+  lastused  String
+  expYears  String
+  expMonths String
+  Skill     User   @relation(fields: [userKeyId], references: [id])
+}
