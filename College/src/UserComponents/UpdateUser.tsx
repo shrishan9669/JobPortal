@@ -1,18 +1,18 @@
 import { CiLocationOn } from "react-icons/ci";
-import {FaCross, FaEdit, FaPhone, FaUserCircle } from "react-icons/fa";
+import { FaPhone, FaUserCircle } from "react-icons/fa";
 import { PiShoppingBagOpenLight } from "react-icons/pi";
 
 import { FiEdit2 } from "react-icons/fi";
 import { TiShoppingBag } from "react-icons/ti";
-import { MdOutlineEdit, MdOutlineEmail, MdOutlineRadioButtonChecked } from "react-icons/md";
+import { MdDeleteOutline, MdOutlineEdit, MdOutlineEmail, MdOutlineRadioButtonChecked } from "react-icons/md";
 import { LuClipboardCopy } from "react-icons/lu";
 import axios from "axios";
 import { useEffect, useState } from "react";
 import { IoMdClose } from "react-icons/io";
-import { Spinner } from "../Components/loader";
+import { Spinner } from "../components/loader";
 import { GiTireIronCross } from "react-icons/gi";
 import { RxCross1, RxCrossCircled } from "react-icons/rx";
-import { BiCheckboxChecked } from "react-icons/bi";
+import { X } from "lucide-react";
 export default function UpdateUser(){
 
     const[name,setName] = useState('');
@@ -21,7 +21,8 @@ export default function UpdateUser(){
     const[experience,setExp] = useState('');
     const[phone,setPhone] = useState('');
     const[updated,setUpdated] = useState('');
-
+    const [verified,setVerified] = useState('not-verified');
+    const [availability,setAvailable] = useState('')
     async function UserDetails(){
         try{
             const Details = await axios({
@@ -36,11 +37,12 @@ export default function UpdateUser(){
             if(Details.data && Details.data.user){
                setName(Details.data.user.name);
                setEmail(Details.data.user.email);
-
+               setVerified(Details.data.user.emailVerify)
                setPhone(Details.data.user.phone);
                setExp(Details.data.user.experience);
                setCity(Details.data.user.location);
                setUpdated(formatDate(Details.data.user.updatedAt))
+               setAvailable(Details.data.user.availability)
 
             }
         }
@@ -54,21 +56,50 @@ export default function UpdateUser(){
     },[])
 
 
+    // Pop ups
     const[showDisability,setShowDisability] = useState(true)
-
     const[DisabilityPopup,setDisabilityPopup] = useState(false);
     const[personalPopup,setPersonalPopup] = useState(false);
     const[careerPopup,setCareerPopup] = useState(false);
     const [key_skillsPopup,setKeySkillsPopup] = useState(false)
     const [eduPopup,setEdupopup] = useState(false)
+    const [editUser,setEditUser] = useState(false)
+    
    
 
     //  Getting disability
      const [disability,setDisability] = useState('');
      const [military,setMilitary] = useState('');
      const [careerBreak,setBreak] = useState('');
-
      const [keySkills,setKeySkills] = useState<String []>([]);
+     const [preObj,setRowId] = useState({})
+     const [personalObj,setPersonalObj] = useState({
+            gender:'',
+            maritalStatus:'',
+            dateofBirth:'',
+            category:'',
+            moreInfo:[],
+            address:"",
+            language:[] 
+            
+        })
+
+        interface EducationType{
+            education:''
+            marks:''
+            passout:''
+            startingCourse:''
+            endingCourse:''
+            course:''
+            courseType:''
+            gradingSystem:''
+            medium:''
+            board:''
+        }
+     const [educationSet,setEducationSet] = useState<EducationType[]>([])
+
+
+
         async function GetDiversity(){
             try{
                 const Got = await axios({
@@ -114,16 +145,7 @@ export default function UpdateUser(){
             }
         }
 
-        const [personalObj,setPersonalObj] = useState({
-            gender:'',
-            maritalStatus:'',
-            dateofBirth:'',
-            category:'',
-            moreInfo:[],
-            address:"",
-            language:[] 
-            
-        })
+       
 
 
         async function Getting_PersonalDetails(){
@@ -155,17 +177,53 @@ export default function UpdateUser(){
             }
         }
 
+        async function Getting_Educational(){
+            try{
+                 const Getting = await axios({
+                    url:'http://localhost:3000/user/getEducation',
+                    headers:{
+                        Authorization:`Bearer ${localStorage.getItem('token')}`
+                    },
+                    method:'GET'
+                 })
+
+                 if(Getting.data && Getting.data.ok){
+                    setEducationSet(Getting.data.education)
+                 }
+            }
+            catch(err){
+                console.log(err)
+            }
+        }
+
 
         
 
     useEffect(()=>{
            GetDiversity();
            GettingAlreadySkills();
-           Getting_PersonalDetails()
+           Getting_PersonalDetails();
+           Getting_Educational();
     },[])
+
+
+    function Education_Exist_OrNot(education:any){
+       if(educationSet.length>0){
+        return educationSet.some(each => each.education===education)
+       }
+    }
+
+    function EducationType(education:any){
+        if(educationSet.length>0){
+            if(education==='10th' || education==='12th'){
+                return 'school'
+            }
+            else return 'higherEducation'
+        }
+    }
     return (
         <div className="font-aman bg-gray-50 p-14">
-               <ProfileCard name={name} email={email} phone={phone} updated={updated} city={city} exp={experience}/>
+               <ProfileCard availability={availability} setEditUser={setEditUser} name={name} email={email} phone={phone} updated={updated} city={city} exp={experience} verify={verified}/>
 
 
             {/* lower part */}
@@ -212,23 +270,53 @@ export default function UpdateUser(){
                          {/* Education */}
                          <div id="Education" className="flex flex-col bg-white gap-4  p-4 rounded-2xl">
                             <div className="flex justify-between">
-                                <span className="font-medium ">Education</span>
-                                <span onClick={()=> setEdupopup(true)} className="text-blue-500 font-medium cursor-pointer">Add education</span>
+                                <span className="font-medium ">Education <span   onClick={Getting_Educational}className="cursor-pointer hover:text-green-500 hover:font-medium animate-pulse ">(Reload Details)</span></span>
+                                <span onClick={()=> {
+                                    setRowId({})
+                                    setEdupopup(true)
+                                    }} className="text-blue-500 font-medium cursor-pointer">Add education</span>
                             </div>
 
                             <p className="text-slate-500 ">Your qualifications help employers know your educational background</p>
 
+                             
+                             <div className="flex flex-col gap-4 items-start">
+                                {
+                                  educationSet.map((each:any)=>{
+                                    return <div>
+                                        {EducationType(each.education)==='school' && <div className="flex flex-col">
+                                              <span className="font-medium  flex gap-3 items-center">Class {each.education} <FiEdit2 onClick={()=> {
+                                                setRowId({education:each.education,rowId:each.id})
+                                                setEdupopup(true)
+                                                }}  className="text-slate-500 cursor-pointer"/></span>
+                                              <span className="font-medium">{each.medium}</span>
+                                              <span className="text-slate-500">{each.passout}</span>
+                                         </div>
+                                        }
+                                        {EducationType(each.education)==='higherEducation' && <div className="flex flex-col">
+                                              <span className="font-medium flex gap-3 items-center">{each.education} {each.course}  <FiEdit2 onClick={()=> {
+                                                setRowId({education:each.education,rowId:each.id})
+                                                setEdupopup(true)
+                                                }} className="text-slate-500 cursor-pointer"/></span>
+                                              <span className="font-medium">{each.university}</span>
+                                              <span className="text-slate-500">{each.startingCourse}-{each.endingCourse} | {each.courseType}</span>
+
+                                         </div>
+                                        }
+                                    </div>
+                                  })
+                                }
+                             </div>
                           
 
                             <div className="flex flex-col gap-4 items-start">
-                                <span className="text-blue-500 font-medium text-md">Add doctorate/PHD</span>
-                                <span className="text-blue-500 font-medium text-md">Add masters/post-graduation</span>
-                                <span className="text-blue-500 font-medium text-md">Add graduation/diploma</span>
-                                <span className="text-blue-500 font-medium text-md">Add class X</span>
-                                <span className="text-blue-500 font-medium text-md">Add class XII</span>
 
-                                <span className="text-blue-500 font-medium text-md">Add class 10th</span>
-
+                                {!Education_Exist_OrNot('Doctorate/PhD') && <span className="text-blue-500 font-medium text-md">Add doctorate/PHD</span>}
+                                {!Education_Exist_OrNot('Masters/Post-Graduation') && <span className="text-blue-500 font-medium text-md">Add masters/post-graduation</span>}
+                                {!Education_Exist_OrNot('Graduation/Diploma') && <span className="text-blue-500 font-medium text-md">Add graduation/diploma</span>}
+                                {!Education_Exist_OrNot('12th') &&  <span className="text-blue-500 font-medium text-md">Add class XII</span>}
+                                {!Education_Exist_OrNot('10th') && <span className="text-blue-500 font-medium text-md">Add class 10th</span>}
+                                
                             </div>
                          </div>
 
@@ -501,13 +589,555 @@ export default function UpdateUser(){
 
                              {careerPopup && <CareerProfile onClose={()=> setCareerPopup(false)}/>} 
                              {key_skillsPopup && <KeySkills_Div onClose={()=> setKeySkillsPopup(false)}/>} 
-                              {eduPopup && <EducationDiv onClose={()=> setEdupopup(false)}/>}  
+                              {eduPopup && <EducationDiv preObject={preObj || ""}  onClose={()=> setEdupopup(false)}/>}  
                                     
                      </div>
             </div>
+
+          {editUser && <BasicDetailsModal availability={availability} name={name} city={city} phone={phone} exp={experience} email={email} onClose={()=> setEditUser(false)}/>}
         </div>
     )
 }
+
+
+function BasicDetailsModal({onClose,name,city,phone,exp,email,availability}:any) {
+  const experiencesList = [
+  "0-1",
+  "1-2",
+  "2-3",
+  "3-4",
+  "4-5",
+  "5-7",
+  "7-10",
+  "10"
+];
+  const jobLocations = [
+  "Bengaluru",
+  "Hyderabad",
+  "Pune",
+  "Mumbai",
+  "Navi Mumbai",
+  "Thane",
+  "Delhi",
+  "New Delhi",
+  "Gurugram",
+  "Noida",
+  "Chennai",
+  "Kolkata",
+  "Ahmedabad",
+  "Surat",
+  "Jaipur",
+  "Indore",
+  "Lucknow",
+  "Bhopal",
+  "Nagpur",
+  "Chandigarh",
+  "Mohali",
+  "Zirakpur",
+  "Kochi",
+  "Trivandrum",
+  "Coimbatore",
+  "Visakhapatnam",
+  "Vadodara",
+  "Rajkot",
+  "Mysuru",
+  "Hubballi",
+  "Mangalore",
+  "Goa",
+  "Patna",
+  "Ranchi",
+  "Bhubaneswar",
+  "Guwahati",
+  "Dehradun",
+  "Jammu",
+  "Udaipur",
+  "Kanpur",
+  "Varanasi",
+  "Prayagraj",
+  "Amritsar",
+  "Ludhiana",
+  "Jalandhar",
+  "Faridabad",
+  "Ghaziabad",
+  "Agra",
+  "Meerut",
+  "Gorakhpur",
+  "Jabalpur",
+  "Raipur",
+  "Bilaspur",
+  "Nashik",
+  "Aurangabad",
+  "Vijayawada",
+  "Tirupati",
+  "Warangal",
+  "Nellore",
+  "Madurai",
+  "Salem",
+  "Erode",
+  "Tirunelveli",
+  "Bhavnagar",
+  "Gandhinagar",
+  "Srinagar",
+  "Shimla",
+  "Kharagpur",
+  "Durgapur",
+  "Siliguri",
+  "Puducherry",
+  "Port Blair",
+  "Aizawl",
+  "Imphal",
+  "Shillong",
+  "Kohima",
+  "Gangtok",
+  "Itanagar",
+  "Remote (India)",
+  "Work From Home"
+];
+const topITLocationsIndia = [
+  "Bangalore",
+  "Hyderabad",
+  "Pune",
+  "Chennai",
+  "Gurgaon",
+  "Noida",
+  "Delhi",
+  "Mumbai",
+  "Navi Mumbai",
+  "Thane",
+  "Kolkata",
+  "Ahmedabad",
+  "Vadodara",
+  "Indore",
+  "Jaipur",
+  "Chandigarh",
+  "Mohali",
+  "Trivandrum",
+  "Kochi",
+  "Coimbatore",
+  "Madurai",
+  "Salem",
+  "Vijayawada",
+  "Visakhapatnam",
+  "Bhubaneswar",
+  "Bhopal",
+  "Nagpur",
+  "Nashik",
+  "Aurangabad",
+  "Mysore",
+  "Hubli",
+  "Belgaum",
+  "Mangalore",
+  "Udupi",
+  "Udaipur",
+  "Jodhpur",
+  "Ujjain",
+  "Gwalior",
+  "Raipur",
+  "Ranchi",
+  "Patna",
+  "Lucknow",
+  "Kanpur",
+  "Prayagraj",
+  "Varanasi",
+  "Dehradun",
+  "Haridwar",
+  "Shimla",
+  "Una",
+  "Solan"
+];
+const jobRoles = [
+  "Software Engineer",
+  "Frontend Developer",
+  "Backend Developer",
+  "Full Stack Developer",
+  "Web Developer",
+  "React Developer",
+  "Node.js Developer",
+  "Java Developer",
+  "Python Developer",
+  "PHP Developer",
+  ".NET Developer",
+  "Android Developer",
+  "iOS Developer",
+  "Flutter Developer",
+  "Mobile App Developer",
+  "Game Developer",
+  "AI Engineer",
+  "Machine Learning Engineer",
+  "Data Scientist",
+  "Data Analyst",
+  "Business Intelligence Analyst",
+  "DevOps Engineer",
+  "Cloud Engineer",
+  "AWS Engineer",
+  "Azure Engineer",
+  "Cyber Security Engineer",
+  "Blockchain Developer",
+  "QA Engineer",
+  "Software Tester",
+  "Automation Tester",
+  "SDET",
+  "Software Architect",
+  "Technical Lead",
+  "CTO",
+  "Product Manager",
+  "Associate Product Manager",
+  "Project Manager",
+  "Program Manager",
+  "Scrum Master",
+  "Business Analyst",
+  "Product Owner",
+  "UI Designer",
+  "UX Designer",
+  "UI/UX Designer",
+  "Graphic Designer",
+  "Motion Graphics Designer",
+  "Video Editor",
+  "Animator",
+  "3D Artist",
+  "VFX Artist",
+  "Content Creator",
+  "Creative Director",
+  "Sales Executive",
+  "Sales Manager",
+  "Business Development Executive",
+  "Business Development Manager",
+  "Inside Sales Specialist",
+  "Pre-Sales Consultant",
+  "Marketing Executive",
+  "Marketing Manager",
+  "Digital Marketing Executive",
+  "Digital Marketing Manager",
+  "SEO Specialist",
+  "SEM Specialist",
+  "SMM Specialist",
+  "Email Marketing Specialist",
+  "Affiliate Marketing Specialist",
+  "Growth Hacker",
+  "Content Writer",
+  "Copywriter",
+  "Social Media Manager",
+  "Brand Manager",
+  "HR Executive",
+  "HR Manager",
+  "Talent Acquisition Specialist",
+  "Recruiter",
+  "IT Recruiter",
+  "Payroll Specialist",
+  "Training and Development Manager",
+  "Accountant",
+  "Chartered Accountant",
+  "Finance Manager",
+  "Financial Analyst",
+  "Investment Analyst",
+  "Audit Executive",
+  "Operations Executive",
+  "Operations Manager",
+  "Customer Support Executive",
+  "Customer Success Manager",
+  "Technical Support Engineer",
+  "MIS Executive",
+  "Data Entry Specialist",
+  "Office Administrator",
+  "Mechanical Engineer",
+  "Civil Engineer",
+  "Electrical Engineer",
+  "Electronics Engineer",
+  "Chemical Engineer",
+  "Automobile Engineer",
+  "Aerospace Engineer",
+  "Structural Engineer",
+  "Quality Control Engineer",
+  "R&D Engineer",
+  "Plant Engineer",
+  "Teacher",
+  "Professor",
+  "Lecturer",
+  "Trainer",
+  "Counselor",
+  "Instructional Designer",
+  "Logistics Executive",
+  "Supply Chain Manager",
+  "Warehouse Manager",
+  "Procurement Executive",
+  "Purchase Manager",
+  "Export Import Specialist"
+];
+
+const [showLocation,setShowLocation] = useState(false)
+const [showMobile,setShowMobile] = useState(false);
+const [showEmail,setShowEmail] = useState(false)
+
+
+const [newObj,setNewObj] = useState({
+  name:name,
+  location:city,
+  phone:phone,
+  email:email,
+  experience:exp,
+  availability:availability
+})
+const [loading,setLoading] = useState(false)
+const [prefLocations,setPrefLocations] = useState<string[]>([]);
+const [prefRoles,setPrefRoles] = useState<string[]>([])
+
+function AddLocation(location:string){
+    const exist = prefLocations.some(each => each===location)
+  if(!exist){
+    setPrefLocations(pref => ([...pref,location]))
+  }
+}
+function removeLocation(location:string){
+  setPrefLocations(pref => (pref.filter(each => each!==location)))
+}
+function AddRoles(role:string){
+  const exist = prefRoles.some(each => each===role)
+  if(!exist){
+    setPrefRoles(prev => ([...prev,role]))
+  }
+}
+
+function RemoveRole(role:string){
+  setPrefRoles(prev => (prev.filter(each => each!==role)))
+}
+async function UpdateUser(){
+    setLoading(true)
+
+    try{
+       const Updated = await axios({
+        url:'http://localhost:3000/user/userUpdate',
+        data:{
+          newObj,
+          prefRoles,
+          prefLocations
+        },
+        method:'POST',
+        headers:{
+          Authorization:`Bearer ${localStorage.getItem('token')}`
+        }
+       })
+
+       if(Updated.data && Updated.data.ok){
+         alert(Updated.data.msg)
+        
+         onClose();
+       }
+    }
+    catch(err){
+      console.log(err)
+    }
+    finally{
+      setLoading(false)
+    }
+}
+
+  return (
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
+      <div className="w-full h-[600px] no-scrollbar overflow-y-scroll max-w-xl bg-white rounded-xl shadow-xl p-6 relative">
+        {/* Close button */}
+        <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+          <X size={20} />
+        </button>
+
+        {/* Title */}
+        <h2 className="text-lg font-semibold mb-6">Basic details</h2>
+
+        {/* Name */}
+        <div className="mb-5">
+          <label className="block text-sm font-medium mb-1">
+            Name <span className="text-red-500">*</span>
+          </label>
+          <input
+            onChange={(e)=> setNewObj(prev => ({...prev,name:e.target.value}))}
+            type="text"
+            defaultValue={name}
+            className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+       
+
+        {/* Work Experience */}
+        <div className="mb-6">
+          <p className="text-sm font-medium mb-2">Work Experience</p>
+          <p className="text-xs text-gray-500 mb-3">
+            We will personalise your Naukri experience based on this
+          </p>
+          <select
+          onChange={(e)=> setNewObj(prev => ({...prev,experience:e.target.value}))}
+          className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" name="" id="">
+            <option value="" hidden>Select Exp</option>
+            
+            {
+              experiencesList.map(each => {
+                return <option value={each}>{each} yrs</option>
+              })
+            }
+
+          </select>
+        </div>
+
+        {/* Location */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium mb-1">
+            Current location <span className="text-red-500">*</span>
+          </label>
+          <p className="text-xs text-gray-500 mb-3">
+            This helps us match you to relevant jobs
+          </p>
+          
+         <div className="relative w-full">
+            <input
+              
+              value={newObj.location}
+              onClick={()=> setShowLocation(prev => !prev)}
+              onChange={(e)=> setNewObj(prev => ({...prev,location:e.target.value}))}
+              type="text"
+              placeholder="Type location"
+              className="w-full border rounded-lg px-3 py-2"
+            />
+
+            <div className={`absolute ${showLocation ? 'block':'hidden'} h-[200px] overflow-y-scroll p-2 w-full bg-white border rounded-lg mt-1 shadow`}>
+              {
+                jobLocations.map(each => {
+                  return <p onClick={()=>{
+                    setNewObj(prev => ({...prev,location:each}));
+                    setShowLocation(false)
+                  }} className="hover:bg-gray-100 p-1" key={each}>{each}</p>
+                })
+              }
+            </div>
+          </div>
+        </div>
+
+
+        {/* preferred locations */}
+        <div>
+              <label className="block font-medium text-gray-700 mb-1">
+                Prefered locations *
+              </label>
+
+              <div className='flex mt-2 flex-wrap gap-2'>
+                {
+                  prefLocations.map(e=>{
+                    return <span className='px-3 flex items-center gap-2 py-1 text-white bg-black rounded-2xl' key={e}>{e} <span onClick={()=>{
+                      removeLocation(e)
+                    }} className='font-semibold cursor-pointer'>X</span></span>
+                  })
+                }
+              </div>
+              <select
+                onChange={(e)=>{
+                     AddLocation(e.target.value)
+                }}
+              className="w-full mt-3 text-slate-500 p-3 border rounded-lg focus:outline-blue-500" name="" id="">
+                <option value="" hidden>Location</option>
+                {
+                  topITLocationsIndia.map(each => {
+                    return <option value={each}>{each}</option>
+                  })
+                }
+              </select>
+        </div>
+
+        {/* Job Roles Interests*/}
+          <div className="mt-5">
+              <label className="block font-medium text-gray-700 mb-1">
+                Select Job Roles *
+              </label>
+
+              <div className='flex mt-2 flex-wrap gap-2'>
+                {
+                  prefRoles.map(e=>{
+                    return <span className='px-3 flex items-center gap-2 py-1 text-white bg-black rounded-2xl' key={e}>{e} <span onClick={()=>{
+                      RemoveRole(e)
+                    }} className='font-semibold cursor-pointer'>X</span></span>
+                  })
+                }
+              </div>
+              <select
+                onChange={(e)=>{
+                     AddRoles(e.target.value)
+                }}
+              className="w-full mt-3 text-slate-500 p-3 border rounded-lg focus:outline-blue-500" name="" id="">
+                <option value="" hidden>Roles</option>
+                {
+                  jobRoles.map(each => {
+                    return <option value={each}>{each}</option>
+                  })
+                }
+              </select>
+          </div>
+
+        {/* Mobile */}
+        <div className="mb-5 mt-5">
+          <label className="block text-sm font-medium mb-1">
+            Mobile number <span className="text-red-500">*</span>
+          </label>
+          <p className="text-sm text-gray-700">{phone}</p>
+          <p onClick={()=> setShowMobile(prev => !prev)} className="text-sm text-blue-600 cursor-pointer">{showMobile ? `Don't Change Number`:`Change mobile number`}</p>
+
+          {
+          showMobile && <div>
+              <input onChange={(e)=> setNewObj(prev => ({...prev,phone:e.target.value}))} type="text"  className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+          </div>
+          }
+        </div>
+
+        {/* Email */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium mb-1">
+            Email address <span className="text-red-500">*</span>
+          </label>
+          <p className="text-sm text-gray-700">{email}</p>
+          <p onClick={()=> setShowEmail(prev => !prev)} className="text-sm text-blue-600 cursor-pointer">{showEmail ? `Don't Change Email`:`Change Email`}</p> 
+          {
+            showEmail && <div>
+              <input
+               onChange={(e)=> setNewObj(prev => ({...prev,email:e.target.value}))}
+               type="text" className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          }
+          
+          </div>
+          
+          
+
+
+        {/* Availability */}
+        <div className="mb-8">
+          <p className="text-sm font-medium mb-3">Availability to join</p>
+          <div className="flex flex-wrap gap-3">
+            {["15 Days or less", "1 Month", "2 Months", "3 Months", "More than 3 Months"].map(
+              (item) => (
+                <span
+                  onClick={()=> setNewObj(prev => ({...prev,availability:item}))}
+                  key={item}
+                  className={`px-4 py-1.5 border ${newObj.availability===item ? 'bg-gray-100':''} rounded-full text-sm cursor-pointer hover:bg-gray-100`}
+                >
+                  {item}
+                </span>
+              )
+            )}
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex justify-end gap-4">
+          <button onClick={onClose} className="text-blue-600">Cancel</button>
+          <button
+          onClick={UpdateUser}
+          className="bg-blue-600 flex justify-center text-white px-6 py-2 rounded-full">
+            {loading ? <Spinner/>:'Save'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 
 
 
@@ -516,11 +1146,12 @@ function ReUsableCommonDiv({firstSpan,lastSpan,MainContent,gap,ID}:any){
      const [ResumeAndSummaryShow,setResumeandSummaryShow] = useState(false);
      const [it_skillsPopup,setITSkillsPopup] = useState(false);
      const [employementPopup,setEmployePopup] = useState(false);
-
+     const [projectPopup,setProjectPopup] = useState(false)
 
     const[content,setContent] = useState('')
     const[It_Skills,setITSkill] = useState([]);
-
+    const [projects,setProjects] = useState([])
+    const [loading,setLoading] = useState(false)
     const [rowId,setRowId] = useState('');
     async function Getting_WideRangeOfData(){
         try{
@@ -567,6 +1198,48 @@ function ReUsableCommonDiv({firstSpan,lastSpan,MainContent,gap,ID}:any){
          }
     }
 
+    async function Getting_Projects(){
+      try{
+          const Projects = await axios({
+            url:'http://localhost:3000/user/getProjects',
+            method:'GET',
+            headers:{
+              Authorization:`Bearer ${localStorage.getItem('token')}`
+            }
+          })
+
+          if(Projects.data && Projects.data.ok){
+                setProjects(Projects.data.projects)
+          }
+      }
+      catch(err){
+        console.log(err)
+      }
+    }
+
+    async function DeleteProject(Rowid:any){
+      setLoading(true)
+         try{
+            const Response = await axios({
+              url:`http://localhost:3000/user/deleteProject?projectRowId=${Rowid}`,
+              method:'DELETE',
+              headers:{
+                Authorization:`Bearer ${localStorage.getItem('token')}`
+              }
+            })
+
+            if(Response.data && Response.data.ok){
+              Getting_Projects()
+            }
+         }
+         catch(err){
+          console.log(err)  
+         }
+         finally{
+          setLoading(true)
+         }
+    }
+
     useEffect(()=>{
            if(ID==='Summary'){
             Getting_WideRangeOfData()
@@ -574,6 +1247,10 @@ function ReUsableCommonDiv({firstSpan,lastSpan,MainContent,gap,ID}:any){
            if(ID==='ITSkills'){
             Getting_ITSkills()
            }
+           if(ID==='Projects'){
+              Getting_Projects()
+           }
+           
     },[])
    return (
     <div id={ID} className={`p-4 flex flex-col bg-white shadow-sm gap-${gap} rounded-2xl`}>
@@ -585,6 +1262,8 @@ function ReUsableCommonDiv({firstSpan,lastSpan,MainContent,gap,ID}:any){
             firstSpan==='IT skills' ? setRowId(""):''
 
             firstSpan==='Employment' ? setEmployePopup(true):''
+
+            firstSpan==='Projects' ? setProjectPopup(true):''
             
                 
             }} className="font-medium text-blue-500 cursor-pointer">{lastSpan}</span>}
@@ -601,7 +1280,7 @@ function ReUsableCommonDiv({firstSpan,lastSpan,MainContent,gap,ID}:any){
 
          {it_skillsPopup && <IT_Skills rowId={rowId || ""} onClose={()=> setITSkillsPopup(false)}/>}   
          {employementPopup && <Employement_PopUp onClose={()=> setEmployePopup(false)}/>}
-
+         {projectPopup && <ProjectDiv onClose={()=> setProjectPopup(false)}/>}
 
     {/* It skills dekhane ke liye... */}
         {ID==='ITSkills' && 
@@ -639,6 +1318,33 @@ function ReUsableCommonDiv({firstSpan,lastSpan,MainContent,gap,ID}:any){
         }
 
 
+      {/* Projects dekhane ke liye... */}
+
+      {
+        ID==='Projects' && 
+
+        <div className="flex flex-col gap-3">
+
+
+          
+          { projects.length>0  &&
+             projects.map((each:any) => {
+              return <div className="flex flex-col">
+                 <span className="flex items-center gap-2">{each.projectTitle} {loading ? <Spinner/>:<MdDeleteOutline  
+                 onClick={()=> DeleteProject(each.id)}
+                 
+                 className="text-slate-500 cursor-pointer text-lg hover:text-slate-700"/>} </span>
+                 <span>{each.client}</span>
+                 <span className="text-slate-500 font-normal">{each.startMonth} {each.startYear}</span>
+                 <span className="text-slate-500">{each.description}</span>
+              </div>
+             })
+          }
+            
+        </div>
+      }
+
+
          
 
 
@@ -661,7 +1367,8 @@ const formatted = new Date(isoString).toLocaleDateString("en-GB", options);
   return `${parts[0]} ${parts[1]}, ${parts[2]}`;
 }
 
-  function ProfileCard({name,email,phone,city,exp,updated}:any) {
+function ProfileCard({setEditUser,name,email,phone,city,exp,updated,verify,availability}:any) {
+    const [showVerifyEmail,setShowEmail]  = useState(false)
   return (
     <div className="bg-white shadow-md border border-gray-200 rounded-2xl p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 w-full max-w-6xl mx-auto ">
        {/* left part */}
@@ -676,7 +1383,9 @@ const formatted = new Date(isoString).toLocaleDateString("en-GB", options);
         <div className=" w-full p-3 flex-col flex gap-3">
             {/* Name */}
             <div>
-                <span className="flex items-center text-xl font-semibold gap-7">{name?.toUpperCase()} <FiEdit2 className="text-lg text-slate-500"/></span>
+                <span className="flex items-center text-xl font-semibold gap-7">{name?.toUpperCase()} <FiEdit2 
+                onClick={()=> setEditUser(true)}
+                className="text-lg cursor-pointer text-slate-500"/></span>
                 <span>Profile last updated - {updated}</span>
             </div>
 
@@ -689,14 +1398,30 @@ const formatted = new Date(isoString).toLocaleDateString("en-GB", options);
                 <div className="flex flex-col gap-3">
                     <span className="text-slate-700 flex items-center gap-3"><CiLocationOn />{city}</span>
                     <span className="text-slate-700 flex items-center gap-3"><TiShoppingBag /> {exp[0]?.toUpperCase() + exp?.slice(1).toLowerCase()}</span>
-                    <span className="text-slate-700 flex items-center gap-3"><PiShoppingBagOpenLight /> Add availabiltiy to join</span>
+                    <span className="text-slate-700 flex items-center gap-3"><PiShoppingBagOpenLight />{availability || 'Add availabiltiy to join' }</span>
                 </div>
 
                 <div className="w-px bg-gray-300 h-20"></div>
 
                 <div className="flex flex-col gap-3">
                     <span className="flex gap-2 items-center text-slate-700"><FaPhone/>{phone}</span>
-                    <span className="flex gap-2 items-center text-slate-700"><MdOutlineEmail /> {email}</span>
+                    <span className="flex gap-2 items-center text-slate-700"><MdOutlineEmail /> {email} {verify==='Verified' ? <svg 
+                    width="24" 
+                    height="24" 
+                    viewBox="0 0 24 24" 
+                    fill="none" 
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <circle cx="12" cy="12" r="10" fill="#10b981"/>
+                    <path 
+                      d="M8 12L11 15L16 9" 
+                      stroke="white" 
+                      strokeWidth="2" 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round"
+                    /></svg>:<span className="text-blue-500 font-medium hover:text-blue-600 cursor-pointer"
+                    onClick={()=> setShowEmail(true)}
+                    >Verify</span>} </span>
                 </div>
             </div>
         </div>
@@ -732,8 +1457,106 @@ const formatted = new Date(isoString).toLocaleDateString("en-GB", options);
                 <button className="bg-orange-600 rounded-full text-white px-4 py-2 font-semibold">Add 12 missing details</button>
                </div>
        </div>
+
+        {showVerifyEmail && <VerifyGmail onClose={()=> setShowEmail(false)}/>}
     </div>
   );
+}
+
+function VerifyGmail({ onClose }: any) {
+
+  const [msg,setMsg] = useState('')
+  const [loading,setLoading] =useState(false)
+  async function VerifyMail(){
+    setLoading(true)
+    try{
+      const Sending = await axios({
+        url:'http://localhost:3000/user/VerifyEmailLink',
+        headers:{
+          Authorization:`Bearer ${localStorage.getItem('token')}`
+        },
+        method:'POST'
+      })
+
+      if(Sending.data && Sending.data.ok) {
+          setMsg('Verification email sent! Please check your inbox.')
+      }
+    }
+    catch(err){
+       console.log(err)
+    }
+    finally{
+      setLoading(false)
+    }
+  }
+  return (
+    <div className="fixed inset-0 flex font-aman items-center justify-center bg-black/80 z-50">
+      <div className="bg-white no-scrollbar zoom-in max-h-[600px] overflow-y-auto rounded-4xl flex flex-col gap-5 shadow-md p-8 max-w-2xl mx-auto">
+        
+        {/* Close Button */}
+        <div className="flex items-center justify-end">
+          <GiTireIronCross 
+            onClick={onClose} 
+            className="text-slate-500 cursor-pointer text-xl" 
+          />
+        </div>
+
+        {/* Main Content */}
+        <div className="flex flex-col items-center text-center space-y-6">
+          {/* Icon */}
+          <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center">
+            <svg className="w-10 h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+          </div>
+
+          {/* Heading */}
+          <h2 className="text-2xl font-bold text-gray-800">Verify Your Email Address</h2>
+
+          {/* Description */}
+          <div className="text-gray-600 space-y-4">
+            <p>
+              Please verify your email address to unlock all features and improve your profile visibility.
+            </p>
+            
+            <div className="bg-blue-50 p-4 rounded-lg text-left">
+              <h3 className="font-semibold text-blue-800 mb-2">Why verified emails are preferred by recruiters?</h3>
+              <ul className="text-sm text-blue-700 space-y-1">
+                <li>• <span className="font-medium">Authenticity:</span> Confirms your identity and professionalism</li>
+                <li>• <span className="font-medium">Reliability:</span> Ensures recruiters can reach you easily</li>
+                <li>• <span className="font-medium">Seriousness:</span> Shows you're genuinely seeking opportunities</li>
+                <li>• <span className="font-medium">Security:</span> Reduces fake profiles and spam</li>
+                <li>• <span className="font-medium">Priority:</span> Verified profiles often appear higher in search results</li>
+              </ul>
+            </div>
+
+            <p className="text-sm text-gray-500">
+              Recruiters are 3x more likely to contact candidates with verified email addresses.
+            </p>
+          </div>
+
+          {/* Verify Button */}
+          <button onClick={VerifyMail} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-200 transform hover:scale-105">
+            {loading ? <Spinner/>:'Verify Email Address'}
+          </button>
+
+          <p className="text-purple-500 animate-pulse font-medium" hidden={!msg}>{msg}</p>
+
+          {/* Resend Option */}
+          <p className="text-sm text-gray-500">
+            Didn't receive the verification email?{" "}
+            <button className="text-blue-600 hover:text-blue-700 font-medium underline">
+              Resend Verification Link
+            </button>
+          </p>
+        </div>
+
+
+        
+
+      </div>
+    </div>
+  )
 }
 
 
@@ -2808,8 +3631,8 @@ const [showNotice,setShowNotice] = useState(false)
 }
 
 
-function EducationDiv({onClose}:any){
-
+function EducationDiv({onClose,preObject}:any){
+  console.log("prev" + preObject.rowId)
     
     const Starting = Array.from({length:56},(_,i) => 2025-i);
     const Ending = Array.from({length:61},(_,i) => 2030-i);
@@ -2939,6 +3762,8 @@ const schoolMediums = [
     const [passout,setPassout] = useState('')
     const [medium,setMedium] = useState('')
     const [course,setCourse] = useState('')
+    const [university,setUnivsersity] = useState('');
+    const [msg,setMsg] = useState('')
     const [duration,setDuration] = useState({
         starting:'',
         ending:''
@@ -2953,7 +3778,8 @@ const schoolMediums = [
                 url:'http://localhost:3000/user/postEducation',
                 method:'POST',
                  data:{
-                     education,
+                     education:(preObject.education ? preObject.education : education),
+                     university,
                      passout,
                      medium,
                      duration,
@@ -2961,7 +3787,11 @@ const schoolMediums = [
                      gradingSystem,
                      courseType,
                      marks,
-                     course
+                     course,
+                     preObject
+                     ,
+                     rowId:preObject.rowId ? preObject.rowId:"" 
+
 
                  }
                 ,
@@ -2969,7 +3799,9 @@ const schoolMediums = [
                     Authorization:`Bearer ${localStorage.getItem('token')}`
                 }
             })
-
+            if(posting.data && posting.data.msg){
+                setMsg(posting.data.msg)
+            }
             if(posting.data && posting.data.ok){
                 onClose();
             }
@@ -2980,6 +3812,9 @@ const schoolMediums = [
     }
 
 
+    useEffect(()=>{
+        setEducation(preObject.education || "Doctorate/PhD")
+    },[preObject])
 
 
     return (
@@ -3003,7 +3838,8 @@ const schoolMediums = [
           <label className="block text-sm font-medium mb-1">
             Education <span className="text-red-500">*</span>
           </label>
-          <select onChange={(e)=> setEducation(e.target.value)} className="w-full border border-gray-300 caret-transparent  rounded-lg p-2 outline-none focus:ring-2 focus:ring-blue-500">
+          <select  disabled={!!(preObject && preObject.education && preObject.rowId)}
+ value={preObject?.education ? preObject?.education:education} onChange={(e)=> setEducation(e.target.value)} className="w-full border border-gray-300 caret-transparent  rounded-lg p-2 outline-none focus:ring-2 focus:ring-blue-500">
             <option value="" hidden></option>
             <option className="" value="Doctorate/PhD">Doctorate/PhD</option>
             <option className="" value="Masters/Post-Graduation">Masters/Post-Graduation</option>
@@ -3025,7 +3861,9 @@ const schoolMediums = [
             University/Institute <span className="text-red-500">*</span>
           </label>
           <input
+          value={university}
           required
+          onChange={(e)=> setUnivsersity(e.target.value)}
             type="text"
             placeholder="Select university/institute"
             className="w-full border border-gray-300 rounded-lg p-2 outline-none focus:ring-2 focus:ring-blue-500"
@@ -3219,10 +4057,18 @@ const schoolMediums = [
             type="submit"
             className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition"
           >
-            Save
+            {loading ? <Spinner/>:'Save'}
           </button>
         </div>
+
+
+
       </form>
+
+
+      <div className="text-red-500 font-medium flex justify-center">
+        {msg}
+      </div>
 
 
 
@@ -3234,6 +4080,263 @@ const schoolMediums = [
     )
 
 }
+
+function ProjectDiv({onClose}:any){
+
+  const [title,setTitle] = useState('');
+  const [client,setClient] = useState("");
+  const [skillsused,setSkills] = useState<String[]>([]);
+  const [skill,setSkill] = useState('')
+  const [status,setStatus] = useState('Inprogress');
+  const [loading,setLoading] = useState(false)
+  const [workedFrom,setWorkedFrom] = useState({
+    years:"",
+    months:""
+  })
+  const [description,setDesc] = useState('');
+
+
+  const Years = Array.from({length:50},(_,i)=> 2025-i);
+   const monthsShort = [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec"
+   ];
+
+   const Characters = 1000;
+
+
+   async function HandlePosting(){
+    setLoading(true)
+    try{
+           const Data = await axios({
+            url:'http://localhost:3000/user/postProjects',
+            data:{
+              status,
+              description,
+              workedFrom,
+              title,
+              client,
+              skillsused
+            },
+            method:"POST",
+            headers:{
+              Authorization:`Bearer ${localStorage.getItem('token')}`
+            }
+           })
+
+           if(Data.data && Data.data.ok){
+            onClose()
+           }
+    }
+    catch(err){
+      console.log(err)
+    }
+    finally{
+      setLoading(false)
+    }
+   }
+
+   function handleAddSkill(each:any){
+     const Trimed = each.trim();
+     const If_Exist = skillsused.some(eachSkill => eachSkill===Trimed);
+     if(!If_Exist && Trimed!=''){
+          setSkills(prev => ([...prev,Trimed]))
+     }
+   }
+
+   function handleRemoveSkill(each:any){
+     const Trimed = each.trim();
+     setSkills(prev => prev.filter(e => e!==Trimed))
+   }
+
+
+
+    return (
+        <div className="fixed  inset-0 flex font-aman items-center justify-center bg-black/80 z-50">
+
+            <div className="bg-white no-scrollbar zoom-in max-h-[660px] overflow-y-auto rounded-4xl flex flex-col gap-9 shadow-md p-8 max-w-3xl mx-auto w-[660px]">
+ 
+
+
+
+                <div className="flex justify-end items-center">
+                    <IoMdClose onClick={onClose} className="text-xl cursor-pointer hover:text-slate-500"/>
+                </div>
+
+                  
+                       <h2 className="text-2xl font-semibold text-gray-800 mb-2">Project</h2>
+      <p className="text-gray-500 mb-6">
+        Stand out for employers by adding details about projects you have done
+        in college, internships, or at work
+      </p>
+
+      <form onSubmit={(e)=>{
+        e.preventDefault()
+        HandlePosting()
+        }} action="" className="flex flex-col gap-6">
+                {/* Project title */}
+      <div className="mb-5">
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Project title <span className="text-red-500">*</span>
+        </label>
+        <input
+        onChange={(e)=> setTitle(e.target.value)}
+          required
+          type="text"
+          placeholder="Enter project title"
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+
+    
+
+      {/* Client */}
+      <div className="mb-5">
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Client <span className="text-red-500">*</span>
+        </label>
+        <input
+          onChange={(e)=> setClient(e.target.value)}
+          required
+          type="text"
+          placeholder="Enter client name"
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+
+       {/* Skillused */}
+      <div className="mb-5 flex flex-col gap-3 items-start">
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Skills Used 
+        </label>
+        <div className="flex flex-wrap gap-2">
+
+          {
+            skillsused.map(each => {
+               return <span className="px-3 py-1 flex gap-1 items-center bg-gray-100 rounded-full border border-gray-400">
+                {each} <IoMdClose className='text-slate-500 cursor-pointer' onClick={()=> handleRemoveSkill(each)}/>
+               </span>
+            })
+          }
+        </div>
+        <input
+          onChange={(e)=> setSkill(e.target.value)}
+          type="text"
+          
+          placeholder="Enter skill you used"
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+
+        <span onClick={()=> handleAddSkill(skill)} className="px-4 py-1 bg-purple-500 text-white rounded-full mt-2 cursor-pointer hover:bg-purple-400">Add</span>
+      </div>
+
+      {/* Project status */}
+      <div className="mb-5">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Project status
+        </label>
+        <div className="flex items-center space-x-6">
+          <label className="flex items-center space-x-2 cursor-pointer">
+            <input onChange={()=> setStatus('Inprogress')} checked={status==='Inprogress'} type="radio" name="status" className="accent-black w-4 h-4" />
+            <span>In progress</span>
+          </label>
+          <label className="flex items-center space-x-2 cursor-pointer">
+            <input onChange={()=> setStatus('Finished')} checked={status==='Finished'} type="radio" name="status" className="accent-black w-4 h-4" />
+            <span>Finished</span>
+          </label>
+        </div>
+      </div>
+
+      {/* Worked from */}
+      <div className="mb-5">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Worked from <span className="text-red-500">*</span>
+        </label>
+        <div className="flex space-x-3">
+          <select
+          required
+          onChange={(e)=> setWorkedFrom(prev => ({...prev,years:e.target.value}))} className="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600">
+            <option hidden value="">Select Year</option>
+            {
+              Years.map(each=>{
+                return <option key={each} value={each}>
+                  {each}
+                </option>
+              })
+            }
+          </select>
+          <select
+          required
+          onChange={(e)=> setWorkedFrom(prev => ({...prev,months:e.target.value}))} className="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600">
+            <option hidden value="">Select month</option>
+            {
+              monthsShort.map(each=>{
+                return <option key={each} value={each}>
+                  {each}
+                </option>
+              })
+            }
+          </select>
+        </div>
+      </div>
+
+      {/* Details */}
+      <div className="mb-5">
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Details of project <span className="text-red-500">*</span>
+        </label>
+        <textarea
+          
+          onChange={(e)=> setDesc(e.target.value)}
+          placeholder="Type here..."
+          maxLength={Characters}
+          rows={4}
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        ></textarea>
+        <p
+    className={`text-right text-xs mt-1 ${
+      Characters - description.length === 0 ? "text-red-500" : "text-gray-500"
+    }`}
+  >
+    {Characters - description.length} character(s) left
+  </p>
+      </div>
+
+      {/* Add more / Save */}
+      <div className="flex justify-end items-center">
+      
+        <div className="space-x-4">
+          <button className="text-gray-600 font-medium hover:underline">
+            Cancel
+          </button>
+          <button type='submit' className="bg-blue-600 text-white px-5 py-2 rounded-full font-medium hover:bg-blue-700 transition">
+            {loading ? <Spinner/>:'Save'}
+          </button>
+        </div>
+      </div>
+
+      </form>
+
+    
+
+            </div>
+             
+        
+        </div>
+    )
+}
+
+
 
 
 

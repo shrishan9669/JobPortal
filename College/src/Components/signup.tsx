@@ -1,16 +1,29 @@
 import React, { useState } from 'react';
 import { FaEye, FaEyeSlash, FaCheck } from 'react-icons/fa';
 import axios from 'axios';
-import BarLoader from './loader';
+import BarLoader, { Spinner } from './loader';
+
+type FormDataType = {
+  fullName: string;
+  email: string;
+  password: string;
+  mobile: string;
+  workStatus: string;
+  promotions: boolean;
+  roles: string[];   // 👈 important,
+  preferedLocations:string[]
+};
 
 const NaukriRegister = () => {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormDataType>({
     fullName: '',
     email: '',
     password: '',
     mobile: '',
-    workStatus: 'experienced',
-    promotions: true
+    workStatus: '',
+    promotions: true,
+    roles:[],
+    preferedLocations:[]
   });
   
   function AllFilled(){
@@ -43,7 +56,8 @@ const NaukriRegister = () => {
         password:formData.password,
         phone:formData.mobile,
         location:currCity,
-        experience:formData.workStatus
+        experience:formData.workStatus,
+        roles:formData.roles
       }
     })
       console.log(SendingData.data)
@@ -76,8 +90,208 @@ let cities = [
   "Ahmedabad",
   "Kolkata"
 ];
+const experiencesList = [
+  "0-1",
+  "1-2",
+  "2-3",
+  "3-4",
+  "4-5",
+  "5-7",
+  "7-10",
+  "10"
+]; 
+const jobRoles = [
+  "Software Engineer",
+  "Frontend Developer",
+  "Backend Developer",
+  "Full Stack Developer",
+  "Web Developer",
+  "React Developer",
+  "Node.js Developer",
+  "Java Developer",
+  "Python Developer",
+  "PHP Developer",
+  ".NET Developer",
+  "Android Developer",
+  "iOS Developer",
+  "Flutter Developer",
+  "Mobile App Developer",
+  "Game Developer",
+  "AI Engineer",
+  "Machine Learning Engineer",
+  "Data Scientist",
+  "Data Analyst",
+  "Business Intelligence Analyst",
+  "DevOps Engineer",
+  "Cloud Engineer",
+  "AWS Engineer",
+  "Azure Engineer",
+  "Cyber Security Engineer",
+  "Blockchain Developer",
+  "QA Engineer",
+  "Software Tester",
+  "Automation Tester",
+  "SDET",
+  "Software Architect",
+  "Technical Lead",
+  "CTO",
+  "Product Manager",
+  "Associate Product Manager",
+  "Project Manager",
+  "Program Manager",
+  "Scrum Master",
+  "Business Analyst",
+  "Product Owner",
+  "UI Designer",
+  "UX Designer",
+  "UI/UX Designer",
+  "Graphic Designer",
+  "Motion Graphics Designer",
+  "Video Editor",
+  "Animator",
+  "3D Artist",
+  "VFX Artist",
+  "Content Creator",
+  "Creative Director",
+  "Sales Executive",
+  "Sales Manager",
+  "Business Development Executive",
+  "Business Development Manager",
+  "Inside Sales Specialist",
+  "Pre-Sales Consultant",
+  "Marketing Executive",
+  "Marketing Manager",
+  "Digital Marketing Executive",
+  "Digital Marketing Manager",
+  "SEO Specialist",
+  "SEM Specialist",
+  "SMM Specialist",
+  "Email Marketing Specialist",
+  "Affiliate Marketing Specialist",
+  "Growth Hacker",
+  "Content Writer",
+  "Copywriter",
+  "Social Media Manager",
+  "Brand Manager",
+  "HR Executive",
+  "HR Manager",
+  "Talent Acquisition Specialist",
+  "Recruiter",
+  "IT Recruiter",
+  "Payroll Specialist",
+  "Training and Development Manager",
+  "Accountant",
+  "Chartered Accountant",
+  "Finance Manager",
+  "Financial Analyst",
+  "Investment Analyst",
+  "Audit Executive",
+  "Operations Executive",
+  "Operations Manager",
+  "Customer Support Executive",
+  "Customer Success Manager",
+  "Technical Support Engineer",
+  "MIS Executive",
+  "Data Entry Specialist",
+  "Office Administrator",
+  "Mechanical Engineer",
+  "Civil Engineer",
+  "Electrical Engineer",
+  "Electronics Engineer",
+  "Chemical Engineer",
+  "Automobile Engineer",
+  "Aerospace Engineer",
+  "Structural Engineer",
+  "Quality Control Engineer",
+  "R&D Engineer",
+  "Plant Engineer",
+  "Teacher",
+  "Professor",
+  "Lecturer",
+  "Trainer",
+  "Counselor",
+  "Instructional Designer",
+  "Logistics Executive",
+  "Supply Chain Manager",
+  "Warehouse Manager",
+  "Procurement Executive",
+  "Purchase Manager",
+  "Export Import Specialist"
+];
+ const topITLocationsIndia = [
+  "Bangalore",
+  "Hyderabad",
+  "Pune",
+  "Chennai",
+  "Gurgaon",
+  "Noida",
+  "Delhi",
+  "Mumbai",
+  "Navi Mumbai",
+  "Thane",
+  "Kolkata",
+  "Ahmedabad",
+  "Vadodara",
+  "Indore",
+  "Jaipur",
+  "Chandigarh",
+  "Mohali",
+  "Trivandrum",
+  "Kochi",
+  "Coimbatore",
+  "Madurai",
+  "Salem",
+  "Vijayawada",
+  "Visakhapatnam",
+  "Bhubaneswar",
+  "Bhopal",
+  "Nagpur",
+  "Nashik",
+  "Aurangabad",
+  "Mysore",
+  "Hubli",
+  "Belgaum",
+  "Mangalore",
+  "Udupi",
+  "Udaipur",
+  "Jodhpur",
+  "Ujjain",
+  "Gwalior",
+  "Raipur",
+  "Ranchi",
+  "Patna",
+  "Lucknow",
+  "Kanpur",
+  "Prayagraj",
+  "Varanasi",
+  "Dehradun",
+  "Haridwar",
+  "Shimla",
+  "Una",
+  "Solan"
+];
 
 
+function AddRoles(role:string){
+  const exist = formData.roles.some(each => each===role)
+  if(!exist){
+    setFormData(prev => ({...prev,roles:[...prev.roles,role]}))
+  }
+}
+
+function RemoveRole(role:string){
+  setFormData(prev => ({...prev,roles:prev.roles.filter(e => e!==role)}))
+}
+
+function AddLocation(location:string){
+    const exist = formData.preferedLocations.some(each => each===location)
+  if(!exist){
+    setFormData(prev => ({...prev,preferedLocations:[...prev.preferedLocations,location]}))
+  }
+}
+function removeLocation(location:string){
+  setFormData(prev => ({...prev,preferedLocations:prev.preferedLocations.filter(each => each!==location)}))
+}
 
 const [currCity,setCurCity] = useState('');
 const [cityarr,setCityArr] = useState(['']);
@@ -236,69 +450,21 @@ function AddCity(e:any){
             </p>
           </div>
 
-          {/* Work Status */}
+          {/* Work Status and Cities */}
           <div className=''>
             <label className="block text-sm font-bold mb-3">
-              Work status<span className='text-red-500'>*</span>
+              Work Experience<span className='text-red-500'>*</span>
             </label>
-            <div className=" flex items-center gap-5">
-              <label className={`flex border ${formData.workStatus==='experienced' ? 'border-black':'border-slate-300   '}  p-4 rounded-2xl items-center space-x-3 cursor-pointer`}>
-                <div className="relative">
-                  <input
-                    type="radio"
-                    name="workStatus"
-                    value="experienced"
-                    checked={formData.workStatus === 'experienced'}
-                    onChange={handleChange}
-                    className="sr-only"
-                  />
-                  <div className={`w-5 h-5 border-2 rounded-full flex items-center justify-center ${
-                    formData.workStatus === 'experienced' 
-                      ? 'border-blue-600 bg-blue-600' 
-                      : 'border-gray-300'
-                  }`}>
-                    {formData.workStatus === 'experienced' && (
-                      <div className="w-2 h-2 bg-white rounded-full"></div>
-                    )}
-                  </div>
-                </div>
-                <div className='flex flex-col'>
-                    <span className="font-bold">
-                  I'm experienced
-                    </span>
-                <span className="text-xs text-gray-500">I have work experience (excluding internships)</span>
-                </div>
-               
-              </label>
-              
-              <label className={`flex border ${formData.workStatus==='fresher' ? 'border-black':'border-slate-300   '}  p-4 rounded-2xl items-center space-x-3 cursor-pointer`}>
-                <div className="relative">
-                  <input
-                    type="radio"
-                    name="workStatus"
-                    value="fresher"
-                    checked={formData.workStatus === 'fresher'}
-                    onChange={handleChange}
-                    className="sr-only"
-                  />
-                  <div className={`w-5 h-5 border-2 rounded-full flex items-center justify-center ${
-                    formData.workStatus === 'fresher' 
-                      ? 'border-blue-600 bg-blue-600' 
-                      : 'border-gray-300'
-                  }`}>
-                    {formData.workStatus === 'fresher' && (
-                      <div className="w-2 h-2 bg-white rounded-full"></div>
-                    )}
-                  </div>
-                </div>
-                <div className='flex flex-col'>
-                    <span className="font-bold">
-                  I'm a fresher
-                </span>
-                <span className="text-xs text-gray-500">I am a student/ Haven't worked after graduation</span>
-                </div>
-              </label>
-            </div>
+             <select
+             onChange={(e)=> setFormData(prev => ({...prev,workStatus:e.target.value}))}
+             className="w-[90%] text-slate-500 p-3 border rounded-lg focus:outline-blue-500" name="" id="">
+                <option value="" hidden>Experience</option>
+                {
+                  experiencesList.map(each => {
+                    return <option value={each}>{each} yrs</option>
+                  })
+                }
+              </select>
 
             {/* If fresher or experienced selected */}
 
@@ -354,6 +520,64 @@ function AddCity(e:any){
             </div>
           </div>
 
+         {/* Job Roles Interests*/}
+          <div>
+              <label className="block font-medium text-gray-700 mb-1">
+                Select Job Roles *
+              </label>
+
+              <div className='flex mt-2 flex-wrap gap-2'>
+                {
+                  formData.roles.map(e=>{
+                    return <span className='px-3 flex items-center gap-2 py-1 text-white bg-black rounded-2xl' key={e}>{e} <span onClick={()=>{
+                      RemoveRole(e)
+                    }} className='font-semibold cursor-pointer'>X</span></span>
+                  })
+                }
+              </div>
+              <select
+                onChange={(e)=>{
+                     AddRoles(e.target.value)
+                }}
+              className="w-full mt-3 text-slate-500 p-3 border rounded-lg focus:outline-blue-500" name="" id="">
+                <option value="" hidden>Roles</option>
+                {
+                  jobRoles.map(each => {
+                    return <option value={each}>{each}</option>
+                  })
+                }
+              </select>
+          </div>
+
+          {/* Prefered locations*/}
+          <div>
+              <label className="block font-medium text-gray-700 mb-1">
+                Prefered locations *
+              </label>
+
+              <div className='flex mt-2 flex-wrap gap-2'>
+                {
+                  formData.preferedLocations.map(e=>{
+                    return <span className='px-3 flex items-center gap-2 py-1 text-white bg-black rounded-2xl' key={e}>{e} <span onClick={()=>{
+                      removeLocation(e)
+                    }} className='font-semibold cursor-pointer'>X</span></span>
+                  })
+                }
+              </div>
+              <select
+                onChange={(e)=>{
+                     AddLocation(e.target.value)
+                }}
+              className="w-full mt-3 text-slate-500 p-3 border rounded-lg focus:outline-blue-500" name="" id="">
+                <option value="" hidden>Roles</option>
+                {
+                  topITLocationsIndia.map(each => {
+                    return <option value={each}>{each}</option>
+                  })
+                }
+              </select>
+          </div>
+
           {/* Promotions Checkbox */}
           <label className="flex items-start space-x-3 cursor-pointer">
             <div className="relative mt-1">
@@ -393,9 +617,9 @@ function AddCity(e:any){
             
             type="submit"
             disabled={!AllFilled()}
-            className={`w-full  text-white font-semibold py-3 px-4 rounded-lg transition duration-200 transform  ${AllFilled() ? 'bg-green-500 cursor-pointer hover:bg-green-600 hover:scale-[1.02]':'bg-slate-400 text-slate-800 cursor-not-allowed'}`}
+            className={`w-full flex justify-center  text-white font-semibold py-3 px-4 rounded-lg transition duration-200 transform  ${AllFilled() ? 'bg-green-500 cursor-pointer hover:bg-green-600 hover:scale-[1.02]':'bg-slate-400 text-slate-800 cursor-not-allowed'}`}
           >
-           {loader ? <BarLoader/>:'Register Now'}
+           {loader ? <Spinner/>:'Register Now'}
           </button>
         </form>
             {/* Continue with google stuff */}

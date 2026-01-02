@@ -10,31 +10,42 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  
+ 
 }
 
+// All employee tables..
 model User {
   id             Int                  @id @default(autoincrement())
   name           String
   email          String               @unique
+  emailVerify    String?
   password       String
-  role           String               @default("jobseeker")
+  roles           String[] 
+  preferedLocations String[]              
   phone          String?
   location       String?
   profilePic     String?
   createdAt      DateTime             @default(now())
   updatedAt      DateTime             @updatedAt
-  experience     String?              @default("fresher")
+  experience     String?             
   careerBreak    String?
   disability     String?
   militaryExp    String?
   profileSummary String?
   resumeHeadline String?
+  availability   String?
+
   ITSkills       ITSkills[]
   KeySkills      KeySkills?
   Personal       UserPersonalDetails?
   Employment     Employment[]
   Education      Education[]
+  Project        Projects[]
+  Applicants     Applicant[]
+  Savedjobs      SavedJobs[]
+
+
 }
 
 model UserPersonalDetails {
@@ -51,7 +62,7 @@ model UserPersonalDetails {
   createdAt           DateTime              @default(now())
   updatedAt           DateTime              @updatedAt
   languageProficiency LanguageProficiency[]
-  user                User                  @relation(fields: [userId], references: [id])
+  user                User                  @relation(fields: [userId], references: [id],onDelete: Cascade)
 }
 
 model LanguageProficiency {
@@ -62,14 +73,14 @@ model LanguageProficiency {
   canRead      Boolean             @default(false)
   canWrite     Boolean             @default(false)
   canSpeak     Boolean             @default(false)
-  userDetails  UserPersonalDetails @relation(fields: [userDetailId], references: [id])
+  userDetails  UserPersonalDetails @relation(fields: [userDetailId], references: [id],onDelete: Cascade)
 }
 
 model KeySkills {
   id          Int      @id @default(autoincrement())
   userKeyId   Int      @unique
   skillSet    String[]
-  userDetails User     @relation(fields: [userKeyId], references: [id])
+  userDetails User     @relation(fields: [userKeyId], references: [id],onDelete: Cascade)
 }
 
 model ITSkills {
@@ -80,7 +91,7 @@ model ITSkills {
   lastused  String
   expYears  String
   expMonths String
-  Skill     User   @relation(fields: [userKeyId], references: [id])
+  Skill     User   @relation(fields: [userKeyId], references: [id],onDelete: Cascade)
 }
 
 model Employment{
@@ -104,7 +115,7 @@ model Employment{
   jobTitle String?
 
 
-  employee User @relation(fields: [userKeyId],references: [id])
+  employee User @relation(fields: [userKeyId],references: [id],onDelete: Cascade)
 
 
 }
@@ -122,9 +133,181 @@ model Education{
   medium String?
   passout String?
   board String?
+  university String?
 
-  Edu User @relation(fields: [userKeyId],references: [id])
+  Edu User @relation(fields: [userKeyId],references: [id],onDelete: Cascade)
   @@unique([userKeyId, education])
 
 }
+
+model Projects{
+  id  Int @id @default(autoincrement())
+  userKeyId   Int 
+  projectTitle  String?
+  client  String?
+  skillsUsed  String[]
+  status  String?
+  startYear  String?
+  startMonth String?
+  description  String?
+
+
+  project  User @relation(fields: [userKeyId],references: [id],onDelete: Cascade)
+}
+
+
+
+// Now Employer tables...
+
+model Employer{
+  id Int @id  @default(autoincrement())
+  name String 
+  email String @unique
+  emailVerify Boolean @default(false)
+  password String
+  hiringfor String?
+  company String?
+  industry String?
+  noOfEmployees String?
+  designation String?
+  pincode String?
+  companyAddress String?
+  phone String?
+  createdAs String?
+  website String?
+  founded String?
+  companyDescription String?
+
+
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  JobPost  Job[]
+}
+
+
+model Job {
+  id              Int       @id @default(autoincrement())
+  title           String
+  company         String
+  description     String?
+  employmentType  String            // Full-time, Part-time, Internship, Contract
+  workMode        String            // Remote, On-site, Hybrid
+  experience      String            // e.g. 0-1 yrs, 2-5 yrs
+  role            String
+  salary          Int
+  currency        String          // e.g. INR, USD
+  location        String            // City or Country
+  openings        Int               // Vacancy count
+  skills          String[]          // Array — React, Node.js, SQL etc.
+  status          String @default("Active")
+  
+  applicationDeadline DateTime     // Last date to apply
+  responsibilities  String[]
+  requirements     String[]
+  education        String[]
+
+  employerId      Int
+  employer        Employer  @relation(fields: [employerId], references: [id])
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+
+  Applicants   Applicant[]
+  savedBy      SavedJobs[]
+}
+
+model SavedJobs{
+  id   Int @id @default(autoincrement())
+
+  employeeId   Int 
+  jobId        Int 
+
+  createdAt   DateTime @default(now())
+
+  employee  User  @relation(fields: [employeeId],references: [id])
+  job       Job   @relation(fields: [jobId],references: [id])
+
+   @@unique([employeeId, jobId]) // duplicate save roke
+}
+
+
+// Applicant side
+model Applicant{
+  id      Int @id @default(autoincrement())
+
+  jobId   Int
+  userId  Int
+
+ 
+  resumeUrl   String?
+
+
+  //Additional details
+
+  experienceSnapshot String?
+  skillsSnapshot     String[]
+  appliedOn          DateTime     @default(now())
+
+
+  status       String       @default("Under Review") // Under Review , Shortlisted , Rejected
+
+
+  //Relations
+
+  job  Job  @relation(fields: [jobId],references: [id])
+  user User @relation(fields: [userId],references: [id],onDelete: Cascade)
+
+// Ye combination unique hona chiye...
+  @@unique([jobId, userId])
+
+  Timeline   ApplicationTimeline[]
+  Interviews Interview[]
+}
+
+// Now Applicant ke liye har step ki Timeline 
+
+model ApplicationTimeline{
+  id   Int @id @default(autoincrement())
+
+  applicantId   Int 
+  action        String  // applied | shortlisted | rejected | interview_scheduled | hired
+  note          String?
+  actor         String  // candidate or employer
+  actorId       Int? 
+  createdAt     DateTime  @default(now())
+
+  applicant     Applicant @relation(fields: [applicantId],references: [id])
+}
+
+
+model NotificationEmployee{
+  id   Int @id @default(autoincrement())
+
+  userId  Int 
+  message String
+  isRead  Boolean @default(false)
+  createdAt  DateTime @default(now())
+}
+
+model Interview{
+  id           Int      @id @default(autoincrement())
+  applicantId  Int
+  interviewAt  DateTime
+  link         String
+  note         String?
+  status       String   @default("scheduled") 
+  scheduledBy  Int      // employer / HR userId
+
+  
+  createdAt    DateTime @default(now())
+
+  applicant    Applicant @relation(fields: [applicantId], references: [id])
+}
+
+
+
+
+
 

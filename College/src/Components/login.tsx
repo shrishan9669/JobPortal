@@ -22,7 +22,7 @@ export default function Login({show,onClose,onShowPopup,onShowOtpPopup}:any) {
     return true;
   }
 
- async function HandleLogin(){
+  async function HandleLogin(){
     try{
       setLoader(true);
 
@@ -32,17 +32,22 @@ export default function Login({show,onClose,onShowPopup,onShowOtpPopup}:any) {
         
       })
 
-      if(ResponseLogin && ResponseLogin.data.email){
+      if(ResponseLogin && ResponseLogin.data.ok){
           setMsg('User logined Successfully!!')
           localStorage.setItem('email',ResponseLogin.data.email);
           localStorage.setItem('name',ResponseLogin.data.name);
           localStorage.setItem('token',ResponseLogin.data.token);
          
-            window.location.href = '/IamUser/homepage'
+            window.location.href = '/IamUser/profile'
       }
+     
     }
-    catch(err){
-      console.log(err)
+    catch(err:any){
+      if (err.response && err.response.data && err.response.data.msg) {
+        setMsg(err.response.data.msg);   // 👈 YAHI MAIN POINT
+      } else {
+        setMsg("Something went wrong. Try again later.");
+      }
     }
     finally{
       setLoader(false)
@@ -61,17 +66,23 @@ export default function Login({show,onClose,onShowPopup,onShowOtpPopup}:any) {
       );
 
       console.log("Login successful:", res.data);
-      if(res.data && res.data.email){
+      if(res.data && res.data.ok){
+          setMsg(res.data.msg)
           localStorage.setItem('email',res.data.email);
           localStorage.setItem('name',res.data.name);
           localStorage.setItem('token',res.data.token);
-          window.location.href = '/IamUser/homepage'
+          window.location.href = '/IamUser/profile'
       }
+     
       onClose(); // close login panel
       }
       catch(err:any){
-         console.error("Login failed:", err.response?.data);
-      alert("Login failed");
+        if (err.response && err.response.data && err.response.data.msg) {
+          alert(err.response.data.msg)
+        setMsg(err.response.data.msg);   // 👈 YAHI MAIN POINT
+      } else {
+        setMsg("Something went wrong. Try again later.");
+      }
       }
   }
 
@@ -228,6 +239,9 @@ export default function Login({show,onClose,onShowPopup,onShowOtpPopup}:any) {
                 Use OTP to Login
               </button>
             </div>
+ 
+           
+           
 
             {/* Divider */}
             <div className="relative flex items-center my-6">
@@ -456,6 +470,8 @@ export function LoginWithOtp({onClose}:any){
 
     if(Check_Email.data && Check_Email.data.real){
           localStorage.setItem('otp',Check_Email.data.otp)
+          localStorage.setItem('token',Check_Email.data.token);
+          localStorage.setItem('email',email)
           setShowOtpInput(true);
           
     }
@@ -472,6 +488,7 @@ export function LoginWithOtp({onClose}:any){
   function CheckOtp(){
     if(localStorage.getItem('otp')===otp){
        setMsg("Your otp is correct");
+       window.location.href = '/IamUser/profile'
        return ;
     }
     setMsg("Check otp again..!!")

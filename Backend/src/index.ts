@@ -3,19 +3,37 @@ import adminRouter from "./admin.js"
 import userRouter from "./user.js";
 import cors from "cors";
 import dotenv from "dotenv";
+import "dotenv/config";
+import { DATABASE_URL } from "./config.js";
 import cookieParser from "cookie-parser";
+import { fileURLToPath } from "url";
+import path from "path";
 
-dotenv.config();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+// IMPORTANT: dist/src se env 2 level upar hota hai
+dotenv.config({
+  path: path.resolve(__dirname, "../../.env")
+});
 const app = express();
 const PORT = 3000;
+
+console.log("DATABASE_URL:", process.env.DATABASE_URL);
+// CORS Configuration
 
 // Middleware
 app.use(express.json());
 app.use(cookieParser());
-app.use(cors({
-  origin: "http://localhost:5173",  // frontend ka origin
-  credentials: true
-}));
+
+app.use(
+  cors({
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "Accept"],
+    credentials: false  // "*" ke saath true allowed nahi hota
+  })
+);
+
 
 
 // Routes
